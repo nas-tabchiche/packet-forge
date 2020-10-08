@@ -7,10 +7,20 @@
 //#include <netinet/ip.h>	//Provides declarations for ip header
 #include <arpa/inet.h> // inet_addr
 #include <unistd.h> // sleep()
+#include <endian.h> //definition little endian et big endian
 
 struct ipHeader {
+
+#if __BYTE_ORDER == __BIG_ENDIAN
     uint8_t vers : 4; //format IPv4
     uint8_t ihl : 4; //taille max du paquet : codé sur 4 bits donc 15*32/8 = 60 octets
+#elseif __BYTE_ORDER == __LITTLE_ENDIAN
+    uint8_t ihl : 4;
+    uint8_t vers : 4;
+#else
+#error "Erreur endian"
+#endif // __BYTE_ORDER
+
     uint8_t tos; //type of service, valeur par défaut
     uint16_t len; //longueur totale
     uint16_t id; //identification
