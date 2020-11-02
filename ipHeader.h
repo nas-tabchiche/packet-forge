@@ -18,7 +18,7 @@ struct ipHeader {
     uint8_t ihl : 4;
     uint8_t vers : 4;
 #else
-#error "Erreur endian"
+
 #endif // __BYTE_ORDER
 
     uint8_t tos; //type of service, valeur par défaut
@@ -60,9 +60,6 @@ uint16_t checksum(void *addr, int count)
     return ~sum;
 }
 
-int main(int argc, char* argv[]) {
-    return 0;
-}
 
 //ipHeader iph(char *protocole, char *source, char *destination);
 
