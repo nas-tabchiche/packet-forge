@@ -13,6 +13,7 @@ struct udpHeader {
     uint16_t portD : 4; // port relatif à l’application en cours sur la machine de destination
     uint16_t len; //longueur totale
     uint16_t checksum; //checksum, somme de controle
+    };
 
 uint16_t checksum(void *addr, int count)
 {

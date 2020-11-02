@@ -11,14 +11,14 @@
 struct tcpHeader {
     uint16_t psource; // port source
     uint16_t pdest; // port de destination
-    uint32_t seq; //séquence
+    uint32_t seq; // séquence
     uint32_t ack; // numéro ACK
     uint16_t fenetre; // fenetre
     uint16_t def; // offset-4bits réservé-6bits urg-1bit ack-1bit psh-1bit rst-1bit syn-1bit fin-1bit
     uint16_t checksum; // somme de contrôle
-    uint16_t ptr; // pointeur
-
+    uint16_t ptr; // pointeur urg
 };
+
 uint16_t checksum(void *addr, int count)
 {
     /* Compute Internet Checksum for "count" bytes
