@@ -1,25 +1,25 @@
 /*
-#include "ipHeader.h"
-#include "tcpHeader.h"
-#include "udpHeader.h"
+    #include "ipHeader.h"
+    #include "tcpHeader.h"
+    #include "udpHeader.h"
 */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/ip.h>
-#include <netinet/udp.h>
+#include<stdio.h> //for printf
+#include<stdlib.h> //for exit(0);
+#include<string.h> //memset
+#include<errno.h> //For errno - the error number
+#include<sys/socket.h>    //for socket ofcourse
+#include<netinet/ip.h>    //Provides declarations for ip header
+#include<netinet/tcp.h>   //Provides declarations for udp header
+#include<netinet/udp.h>   //Provides declarations for udp header
 
-//pseudo entete, pour l'instant on laisse ça ici
-struct pseudo_entete {
-    uint32_t ad_source;
-    uint32_t ad_dest;
-    uint16_t placeholder;
-    uint8_t proto;
+struct pseudo_entete { //https://www.frameip.com/entete-udp/#34-8211-checksum
+    uint32_t source;
+    uint32_t dest;
+    uint8_t mbz;
+    uint8_t type;
     uint16_t longueur_udp;
 };
 
-//checksum
 uint16_t checksum(void *addr, int count)
 {
     /* Compute Internet Checksum for "count" bytes
@@ -47,60 +47,92 @@ uint16_t checksum(void *addr, int count)
     return ~sum;
 }
 
-int main(int argc, char* argv[]) {
+int main (/*argc, argv[]*/) {
 
-    //besoin nécessairement de deux arguments(numport et adresse)
-	if(argc < 2){
+    /*if(argc < 4){
 	perror("Pas assez d'arguments");
 	exit(1);
-	}
+	}*/
 
-    //creation raw socket
-    int s = socket(AF_INET, SOCK_RAW, IPPROTO_UDP); //socket(DOMAIN, TYPE, PROTO), les 2 premiers champs ne changeront pas, seulement le 3eme qui sera soit IPPROTO_TCP soit IPPROTO_UDP
-    if (s < 0) {
-        perror("Erreur socket");
+    //création du socket raw
+    int s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW); //quand sur IPPROTO_UDP les paquets renvoient une erreur BAD UDP LENGTH < 8, qui disparait quand on passe sur IPPROTO_RAW
+
+    if(s < 0) {
+        perror("erreur socket(), essayez sudo.");
         exit(1);
     }
-    printf("socket OK");
-
-    struct sockaddr_in sin;
+    printf("socket OK.\n");
 
     //représentation du paquet sous forme de datagramme
     char datagram[4096], source_ip[32], *data, *pseudogram;
 
     //initialiser le tampon à 0
-    memset(datagram, 0, 4096 /*ou sizeof(datagram)*/);
+    memset(datagram, 0, sizeof(datagram));
 
     //entete IP
-    struct iphdr *iph = (struct iphd *) datagram;
+    struct iphdr *iph = (struct iphdr *)datagram;
 
-    //entete UDP        stackoverflow, voir si ça marche
-    struct udphdr *udph = (struct udphd *) (datagram + sizeof(struct ip));
+    //entete UDP
+    struct udphdr *udph = (struct udphdr *) (datagram + sizeof(struct ip));
 
-    //remplissage données
-    strcpy(data, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    struct sockaddr_in sin;
+    struct pseudo_entete ph;
 
-    //ip spoofée
-    strcpy(source_ip, "192.168.1.1");
+    //Data part
+    data = datagram + sizeof(struct iphdr) + sizeof(struct udphdr);
+    strcpy(data, "123456789"); //remplissage champ données
+
+    //notre IP spoofée
+    strcpy(source_ip, "192.168.1.10");
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons(80);
-    sin.sin_addr.s_addr = inet_addr ("127.0.0.1"); //adresse destination, on l'envoie sur localhost pour tester
+    sin.sin_addr.s_addr = inet_addr("192.168.1.2"); //adresse destination
 
-    //remplissage entete ip
+    //remplissage de l'entete IP
     iph -> ihl = 5;
-    iph -> version = 4;
+    iph -> version = 4; //ipv4
     iph -> tos = 0;
     iph -> tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + strlen(data);
-    iph -> id = htonl(12345); //dans notre cas l'id peut être n'importe quoi
-    iph -> frag_off = 0; //apparemment il faut le mettre à 0 avant de calculer la checksum
+    iph -> id = htonl (54321);
+    iph -> frag_off = 0;
     iph -> ttl = 255;
-    iph -> protocol = 17 /*= IPPROTO_UDP*/; //pour l'instant pour débugger on va envoyer des paquets UDP, c'est plus simple
+    iph -> protocol = IPPROTO_UDP; //pour l'instant pour debugger on va envoyer des paquets UDP, c'est plus simple
     iph -> check = 0;
     iph -> saddr = inet_addr(source_ip); //inet_addr convertit la notation ipv4 en binaire
     iph -> daddr = sin.sin_addr.s_addr;
 
-    iph -> check = checksum(datagram, iph -> tot_len);
+    //calcul de la checksum
+    iph -> check = checksum ((unsigned short *)datagram, iph -> tot_len);
+
+    //remplissage entete UDP
+    udph -> source = htons(6666);
+    udph -> dest = htons(8622);
+    udph -> len = htons(8 + strlen(data));
+    udph -> check = 0;
+
+    //calcul de la checksum udp à l'aide du pseudo-entete
+    ph.source = inet_addr(source_ip);
+    ph.dest = sin.sin_addr.s_addr;
+    ph.mbz = 0; //MBZ toujours à 0
+    ph.type = IPPROTO_UDP;
+    ph.longueur_udp = htons(sizeof(struct udphdr) + strlen(data));
+
+    int taille_pseudogramme = sizeof(struct pseudo_entete) + sizeof(struct udphdr) + strlen(data);
+    pseudogram = malloc(taille_pseudogramme);
+
+    memcpy(pseudogram , (char*)&ph, sizeof(struct pseudo_entete));
+    memcpy(pseudogram + sizeof(struct pseudo_entete), udph, sizeof(struct udphdr) + strlen(data));
+
+    udph -> check = checksum((unsigned short*)pseudogram , taille_pseudogramme);
+
+    //Envoi du paquet
+    if (sendto(s, datagram, iph -> tot_len,  0, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+        perror("Échec de l'envoi du paquet.");
+    }
+    else {
+        printf("Paquet envoyé. Longueur : %d \n", iph -> tot_len);
+    }
 
     return 0;
 }
