@@ -3,14 +3,14 @@
     #include "tcpHeader.h"
     #include "udpHeader.h"
 */
-#include<stdio.h> //for printf
-#include<stdlib.h> //for exit(0);
-#include<string.h> //memset
-#include<errno.h> //For errno - the error number
-#include<sys/socket.h>    //for socket ofcourse
-#include<netinet/ip.h>    //Provides declarations for ip header
-#include<netinet/tcp.h>   //Provides declarations for udp header
-#include<netinet/udp.h>   //Provides declarations for udp header
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<errno.h>
+#include<sys/socket.h>
+#include<netinet/ip.h>
+#include<netinet/tcp.h>
+#include<netinet/udp.h>
 
 struct pseudo_entete { //https://www.frameip.com/entete-udp/#34-8211-checksum
     uint32_t source;
@@ -80,7 +80,7 @@ int main (/*argc, argv[]*/) {
 
     //Data part
     data = datagram + sizeof(struct iphdr) + sizeof(struct udphdr);
-    strcpy(data, "123456789"); //remplissage champ données
+    strcpy(data, "TEST TEST 123456789 TEST TEST"); //remplissage champ données
 
     //notre IP spoofée
     strcpy(source_ip, "192.168.1.10");
