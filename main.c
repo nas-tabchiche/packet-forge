@@ -79,7 +79,7 @@ int main (int argc, char **argv) {
     struct iphdr *iph = (struct iphdr *)datagram;
 
 
-    if(strcmp(argv[1], "udp") == 0) {
+    if(strcmp(protocole, "udp") == 0) {
         printf("udp\n\n"); //debug
 
         //entete UDP
@@ -145,7 +145,7 @@ int main (int argc, char **argv) {
         }
     }
 
-    else if(strcmp(argv[1], "tcp") == 0) {
+    else if(strcmp(protocole, "tcp") == 0) {
         printf("tcp\n\n"); //debug
 
         //entete TCP
