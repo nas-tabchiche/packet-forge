@@ -1,8 +1,3 @@
-/*
-    #include "ipHeader.h"
-    #include "tcpHeader.h"
-    #include "udpHeader.h"
-*/
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -17,7 +12,7 @@ struct pseudo_entete { //https://www.frameip.com/entete-udp/#34-8211-checksum
     uint32_t dest;
     uint8_t mbz;
     uint8_t type;
-    uint16_t longueur_udp;
+    uint16_t longueur;
 };
 
 uint16_t checksum(void *addr, int count)
@@ -47,12 +42,27 @@ uint16_t checksum(void *addr, int count)
     return ~sum;
 }
 
-int main (/*argc, argv[]*/) {
+int main (int argc, char **argv) {
 
-    /*if(argc < 4){
-	perror("Pas assez d'arguments");
-	exit(1);
-	}*/
+    /*if(argc < 3){
+    perror("Pas assez d'arguments");
+    exit(1);
+    }*/
+
+    //récupération des arguments
+    int i = 0;
+    for (i = 0; i < argc; i++) {
+        printf("argv[%d] = %s\n", i, argv[i]);
+    }
+    char protocole [3], ipsource[32], ipdest[32];
+    unsigned short source_port, dest_port;
+
+    //strcpy(protocole, argv[1]);
+    strcpy(ipsource, argv[2]);
+    strcpy(ipdest, argv[3]);
+    printf("protocole : %s\nipsource : %s\nipdest : %s\n", protocole, ipsource, ipdest);
+
+
 
     //création du socket raw
     int s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW); //quand sur IPPROTO_UDP les paquets renvoient une erreur BAD UDP LENGTH < 8, qui disparait quand on passe sur IPPROTO_RAW
@@ -61,10 +71,10 @@ int main (/*argc, argv[]*/) {
         perror("erreur socket(), essayez sudo.");
         exit(1);
     }
-    printf("socket OK.\n");
+    printf("socket OK.\n"); //pour débuggage, à supprimer
 
     //représentation du paquet sous forme de datagramme
-    char datagram[4096], source_ip[32], *data, *pseudogram;
+    char datagram[1024], source_ip[32], *data, *pseudogram;
 
     //initialiser le tampon à 0
     memset(datagram, 0, sizeof(datagram));
@@ -72,67 +82,148 @@ int main (/*argc, argv[]*/) {
     //entete IP
     struct iphdr *iph = (struct iphdr *)datagram;
 
-    //entete UDP
-    struct udphdr *udph = (struct udphdr *) (datagram + sizeof(struct ip));
 
-    struct sockaddr_in sin;
-    struct pseudo_entete ph;
+    if(strcmp(argv[1], "udp") == 0) {
+        printf("udp"); //debug
 
-    //Data part
-    data = datagram + sizeof(struct iphdr) + sizeof(struct udphdr);
-    strcpy(data, "TEST TEST 123456789 TEST TEST"); //remplissage champ données
+        //entete UDP
+        struct udphdr *udph = (struct udphdr *) (datagram + sizeof(struct ip));
 
-    //notre IP spoofée
-    strcpy(source_ip, "192.168.1.10");
+        struct sockaddr_in sin;
+        struct pseudo_entete ph;
 
-    sin.sin_family = AF_INET;
-    sin.sin_port = htons(80);
-    sin.sin_addr.s_addr = inet_addr("192.168.1.2"); //adresse destination
+        //Data part
+        data = datagram + sizeof(struct iphdr) + sizeof(struct udphdr);
+        strcpy(data, "TEST TEST 123456789 TEST TEST"); //remplissage champ données
 
-    //remplissage de l'entete IP
-    iph -> ihl = 5;
-    iph -> version = 4; //ipv4
-    iph -> tos = 0;
-    iph -> tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + strlen(data);
-    iph -> id = htonl (54321);
-    iph -> frag_off = 0;
-    iph -> ttl = 255;
-    iph -> protocol = IPPROTO_UDP; //pour l'instant pour debugger on va envoyer des paquets UDP, c'est plus simple
-    iph -> check = 0;
-    iph -> saddr = inet_addr(source_ip); //inet_addr convertit la notation ipv4 en binaire
-    iph -> daddr = sin.sin_addr.s_addr;
+        //notre IP spoofée
+        strcpy(source_ip, ipsource);
 
-    //calcul de la checksum
-    iph -> check = checksum ((unsigned short *)datagram, iph -> tot_len);
+        sin.sin_family = AF_INET;
+        sin.sin_port = htons(80);
+        sin.sin_addr.s_addr = inet_addr("192.168.0.1"); //adresse destination
 
-    //remplissage entete UDP
-    udph -> source = htons(6666);
-    udph -> dest = htons(8622);
-    udph -> len = htons(8 + strlen(data));
-    udph -> check = 0;
+        //remplissage de l'entete IP
+        iph -> ihl = 5;
+        iph -> version = 4; //ipv4
+        iph -> tos = 0;
+        iph -> tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + strlen(data);
+        iph -> id = htonl (1);
+        iph -> frag_off = 0;
+        iph -> ttl = 255;
+        iph -> protocol = IPPROTO_UDP; //pour l'instant pour debugger on va envoyer des paquets UDP, c'est plus simple
+        iph -> check = 0;
+        iph -> saddr = inet_addr(source_ip); //inet_addr convertit la notation ipv4 en binaire
+        iph -> daddr = sin.sin_addr.s_addr;
 
-    //calcul de la checksum udp à l'aide du pseudo-entete
-    ph.source = inet_addr(source_ip);
-    ph.dest = sin.sin_addr.s_addr;
-    ph.mbz = 0; //MBZ toujours à 0
-    ph.type = IPPROTO_UDP;
-    ph.longueur_udp = htons(sizeof(struct udphdr) + strlen(data));
+        //calcul de la checksum
+        iph -> check = checksum ((unsigned short *)datagram, iph -> tot_len);
 
-    int taille_pseudogramme = sizeof(struct pseudo_entete) + sizeof(struct udphdr) + strlen(data);
-    pseudogram = malloc(taille_pseudogramme);
+        //remplissage entete UDP
+        udph -> source = htons(6666);
+        udph -> dest = htons(6666);
+        udph -> len = htons(8 + strlen(data));
+        udph -> check = 0;
 
-    memcpy(pseudogram , (char*)&ph, sizeof(struct pseudo_entete));
-    memcpy(pseudogram + sizeof(struct pseudo_entete), udph, sizeof(struct udphdr) + strlen(data));
+        //calcul de la checksum udp à l'aide du pseudo-entete
+        ph.source = inet_addr(source_ip);
+        ph.dest = sin.sin_addr.s_addr;
+        ph.mbz = 0; //MBZ toujours à 0
+        ph.type = IPPROTO_UDP;
+        ph.longueur = htons(sizeof(struct udphdr) + strlen(data));
 
-    udph -> check = checksum((unsigned short*)pseudogram , taille_pseudogramme);
+        int taille_pseudogramme = sizeof(struct pseudo_entete) + sizeof(struct udphdr) + strlen(data);
+        pseudogram = malloc(taille_pseudogramme);
 
-    //Envoi du paquet
-    if (sendto(s, datagram, iph -> tot_len,  0, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
-        perror("Échec de l'envoi du paquet.");
+        memcpy(pseudogram , (char*)&ph, sizeof(struct pseudo_entete));
+        memcpy(pseudogram + sizeof(struct pseudo_entete), udph, sizeof(struct udphdr) + strlen(data));
+
+        udph -> check = checksum((unsigned short*)pseudogram , taille_pseudogramme);
+
+        //Envoi du paquet
+        if (sendto(s, datagram, iph -> tot_len,  0, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+            perror("Échec de l'envoi du paquet.");
+        }
+        else {
+            printf("Paquet envoyé. Longueur : %d \n", iph -> tot_len);
+        }
     }
-    else {
-        printf("Paquet envoyé. Longueur : %d \n", iph -> tot_len);
-    }
 
+    else if(strcmp(argv[1], "tcp") == 0) {
+        printf("tcp"); //debug
+
+        //entete TCP
+        struct tcphdr *tcph = (struct tcphdr *) (datagram + sizeof(struct ip));
+
+        struct sockaddr_in sin;
+        struct pseudo_entete ph;
+
+        //Data part
+        data = datagram + sizeof(struct iphdr) + sizeof(struct tcphdr);
+        strcpy(data, "TEST TEST 123456789 TEST TEST"); //remplissage champ données
+
+        //notre IP spoofée
+        strcpy(source_ip, ipsource);
+
+        sin.sin_family = AF_INET;
+        sin.sin_port = htons(80);
+        sin.sin_addr.s_addr = inet_addr("192.168.1.2"); //adresse destination
+
+        //remplissage de l'entete IP
+        iph -> ihl = 5;
+        iph -> version = 4; //ipv4
+        iph -> tos = 0;
+        iph -> tot_len = sizeof(struct iphdr) + sizeof(struct tcphdr) + strlen(data);
+        iph -> id = htonl (1);
+        iph -> frag_off = 0;
+        iph -> ttl = 255;
+        iph -> protocol = IPPROTO_TCP; //pour l'instant pour debugger on va envoyer des paquets UDP, c'est plus simple
+        iph -> check = 0;
+        iph -> saddr = inet_addr(source_ip); //inet_addr convertit la notation ipv4 en binaire
+        iph -> daddr = sin.sin_addr.s_addr;
+
+        //calcul de la checksum
+        iph -> check = checksum ((unsigned short *)datagram, iph -> tot_len);
+
+        //remplissage entete TCP
+        tcph -> source = htons(1234);
+        tcph -> dest = htons(80);
+        tcph -> check = 0;
+        tcph -> seq = 0;
+        tcph -> ack_seq = 0;
+        tcph -> doff = 5; // taille en-tête tcp
+        tcph -> fin = 0;
+        tcph -> syn = 1;
+        tcph -> rst = 0;
+        tcph -> psh = 0;
+        tcph -> ack = 0;
+        tcph -> urg = 0;
+        tcph -> window = htons(40); // taille maximum de la fenêtre
+        tcph -> urg_ptr = 0;
+
+
+        //calcul de la checksum udp à l'aide du pseudo-entete
+        ph.source = inet_addr(source_ip);
+        ph.dest = sin.sin_addr.s_addr;
+        ph.mbz = 0; //MBZ toujours à 0
+        ph.type = IPPROTO_TCP;
+        ph.longueur = htons(sizeof(struct tcphdr) + strlen(data));
+
+        int taille_pseudogramme = sizeof(struct pseudo_entete) + sizeof(struct tcphdr) + strlen(data);
+        pseudogram = malloc(taille_pseudogramme);
+
+        memcpy(pseudogram , (char*)&ph, sizeof(struct pseudo_entete));
+        memcpy(pseudogram + sizeof(struct pseudo_entete), tcph, sizeof(struct tcphdr) + strlen(data));
+
+        tcph -> check = checksum((unsigned short*)pseudogram , taille_pseudogramme);
+
+        //Envoi du paquet
+        if (sendto(s, datagram, iph -> tot_len,  0, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+            perror("Échec de l'envoi du paquet.");
+        }
+        else {
+            printf("Paquet envoyé. Longueur : %d \n", iph -> tot_len);
+        }
+    }
     return 0;
 }
