@@ -6,41 +6,9 @@
 #include<netinet/ip.h>
 #include<netinet/tcp.h>
 #include<netinet/udp.h>
+#include "checksum.h"
+#include "pseudoHeader.h"
 
-struct pseudo_entete { //https://www.frameip.com/entete-udp/#34-8211-checksum
-    uint32_t source;
-    uint32_t dest;
-    uint8_t mbz;
-    uint8_t type;
-    uint16_t longueur;
-};
-
-uint16_t checksum(void *addr, int count)
-{
-    /* Compute Internet Checksum for "count" bytes
-     *         beginning at location "addr".
-     * Taken from https://tools.ietf.org/html/rfc1071
-     */
-
-    register uint32_t sum = 0;
-    uint16_t * ptr = addr;
-
-    while (count > 1)  {
-        /*  This is the inner loop */
-        sum += * ptr++;
-        count -= 2;
-    }
-
-    /*  Add left-over byte, if any */
-    if (count > 0)
-        sum += * (uint8_t *) ptr;
-
-    /*  Fold 32-bit sum to 16 bits */
-    while (sum>>16)
-        sum = (sum & 0xffff) + (sum >> 16);
-
-    return ~sum;
-}
 
 int main (int argc, char **argv) {
 
