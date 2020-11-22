@@ -12,10 +12,10 @@
 
 int main (int argc, char **argv) {
 
-    /*if(argc < 3){
+    if(argc < 5){
     perror("Pas assez d'arguments");
     exit(1);
-    }*/
+    }
 
     //récupération des arguments
     char protocole[4], ipsource[32], ipdest[32];
@@ -23,8 +23,10 @@ int main (int argc, char **argv) {
 
     strcpy(protocole, argv[1]);
     strcpy(ipsource, argv[2]);
-    strcpy(ipdest, argv[3]);
-    printf("protocole \t: %s\nipsource \t: %s\nipdest \t\t: %s\n\n", protocole, ipsource, ipdest); //debuggage
+    source_port = atoi(argv[3]);
+    strcpy(ipdest, argv[4]);
+    dest_port = atoi(argv[5]);
+    printf("protocole \t: %s\nipsource \t: %s\nport source \t: %d\nipdest \t\t: %s\nport dest \t: %d\n\n", protocole, ipsource, source_port, ipdest, dest_port); //debuggage
 
 
 
@@ -65,7 +67,7 @@ int main (int argc, char **argv) {
 
         sin.sin_family = AF_INET;
         sin.sin_port = htons(80);
-        sin.sin_addr.s_addr = inet_addr("192.168.0.1"); //adresse destination
+        sin.sin_addr.s_addr = inet_addr(ipdest); //adresse destination
 
         //remplissage de l'entete IP
         iph -> ihl = 5;
@@ -84,8 +86,8 @@ int main (int argc, char **argv) {
         iph -> check = checksum ((unsigned short *)datagram, iph -> tot_len);
 
         //remplissage entete UDP
-        udph -> source = htons(6666);
-        udph -> dest = htons(6666);
+        udph -> source = htons(source_port);
+        udph -> dest = htons(dest_port);
         udph -> len = htons(8 + strlen(data));
         udph -> check = 0;
 
@@ -131,7 +133,7 @@ int main (int argc, char **argv) {
 
         sin.sin_family = AF_INET;
         sin.sin_port = htons(80);
-        sin.sin_addr.s_addr = inet_addr("192.168.1.2"); //adresse destination
+        sin.sin_addr.s_addr = inet_addr(ipdest); //adresse destination
 
         //remplissage de l'entete IP
         iph -> ihl = 5;
@@ -150,8 +152,8 @@ int main (int argc, char **argv) {
         iph -> check = checksum ((unsigned short *)datagram, iph -> tot_len);
 
         //remplissage entete TCP
-        tcph -> source = htons(1234);
-        tcph -> dest = htons(80);
+        tcph -> source = htons(source_port);
+        tcph -> dest = htons(dest_port);
         tcph -> check = 0;
         tcph -> seq = 0;
         tcph -> ack_seq = 0;
