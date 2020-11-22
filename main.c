@@ -50,17 +50,13 @@ int main (int argc, char **argv) {
     }*/
 
     //récupération des arguments
-    int i = 0;
-    for (i = 0; i < argc; i++) {
-        printf("argv[%d] = %s\n", i, argv[i]);
-    }
-    char protocole [3], ipsource[32], ipdest[32];
+    char protocole[4], ipsource[32], ipdest[32];
     unsigned short source_port, dest_port;
 
-    //strcpy(protocole, argv[1]);
+    strcpy(protocole, argv[1]);
     strcpy(ipsource, argv[2]);
     strcpy(ipdest, argv[3]);
-    printf("protocole : %s\nipsource : %s\nipdest : %s\n", protocole, ipsource, ipdest);
+    printf("protocole \t: %s\nipsource \t: %s\nipdest \t\t: %s\n\n", protocole, ipsource, ipdest); //debuggage
 
 
 
@@ -71,7 +67,7 @@ int main (int argc, char **argv) {
         perror("erreur socket(), essayez sudo.");
         exit(1);
     }
-    printf("socket OK.\n"); //pour débuggage, à supprimer
+    printf("socket OK.\n\n"); //pour débuggage, à supprimer
 
     //représentation du paquet sous forme de datagramme
     char datagram[1024], source_ip[32], *data, *pseudogram;
@@ -84,7 +80,7 @@ int main (int argc, char **argv) {
 
 
     if(strcmp(argv[1], "udp") == 0) {
-        printf("udp"); //debug
+        printf("udp\n\n"); //debug
 
         //entete UDP
         struct udphdr *udph = (struct udphdr *) (datagram + sizeof(struct ip));
@@ -150,7 +146,7 @@ int main (int argc, char **argv) {
     }
 
     else if(strcmp(argv[1], "tcp") == 0) {
-        printf("tcp"); //debug
+        printf("tcp\n\n"); //debug
 
         //entete TCP
         struct tcphdr *tcph = (struct tcphdr *) (datagram + sizeof(struct ip));
