@@ -1,18 +1,19 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<errno.h>
-#include<sys/socket.h>
-#include<netinet/ip.h>
-#include<netinet/tcp.h>
-#include<netinet/udp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <time.h>
 #include "checksum.h"
 #include "pseudoHeader.h"
 
 
 int main (int argc, char **argv) {
 
-    if(argc < 5){
+    if(argc < 4){
     perror("Pas assez d'arguments");
     exit(1);
     }
@@ -23,10 +24,16 @@ int main (int argc, char **argv) {
 
     strcpy(protocole, argv[1]);
     strcpy(ipsource, argv[2]);
-    source_port = atoi(argv[3]);
-    strcpy(ipdest, argv[4]);
-    dest_port = atoi(argv[5]);
+    //source_port = atoi(argv[3]);
+    strcpy(ipdest, argv[3]);
+    dest_port = atoi(argv[4]);
+
+    srand(time(NULL));
+    source_port = rand() % (65535 + 1 - 1024) + 1024; //port destination aléatoire entre 1024 et 65535
+
+
     printf("protocole \t: %s\nipsource \t: %s\nport source \t: %d\nipdest \t\t: %s\nport dest \t: %d\n\n", protocole, ipsource, source_port, ipdest, dest_port); //debuggage
+
 
 
 
@@ -107,6 +114,7 @@ int main (int argc, char **argv) {
         udph -> check = checksum((unsigned short*)pseudogram , taille_pseudogramme);
 
         //Envoi du paquet
+        //while(1) {
         if (sendto(s, datagram, iph -> tot_len,  0, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
             perror("Échec de l'envoi du paquet.");
         }
@@ -114,6 +122,7 @@ int main (int argc, char **argv) {
             printf("Paquet envoyé. Longueur : %d \n", iph -> tot_len);
         }
     }
+//}
 
     else if(strcmp(protocole, "tcp") == 0) {
         printf("tcp\n\n"); //debug
