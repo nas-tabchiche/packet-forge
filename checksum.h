@@ -4,6 +4,9 @@
 #include <stdlib.h> //exit(0);
 #include <errno.h> //errno - numero erreur
 
+#ifndef CHECKSUM_H
+#define CHECKSUM_H
+
 uint16_t checksum(void *addr, int count)
 {
     /* Compute Internet Checksum for "count" bytes
@@ -31,3 +34,4 @@ uint16_t checksum(void *addr, int count)
     return ~sum;
 }
 
+#endif

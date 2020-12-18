@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#ifndef PSEUDO_ENTETE_H
+#define PSEUDO_ENTETE_H
 
 struct pseudo_entete { //https://www.frameip.com/entete-udp/#34-8211-checksum
     uint32_t source;
@@ -9,3 +11,5 @@ struct pseudo_entete { //https://www.frameip.com/entete-udp/#34-8211-checksum
     uint8_t type;
     uint16_t longueur;
 };
+
+#endif
