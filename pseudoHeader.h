@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <sys/types.h>
-
 #ifndef PSEUDO_ENTETE_H
 #define PSEUDO_ENTETE_H
 
