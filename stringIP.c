@@ -10,7 +10,6 @@ char *stringIP(uint32_t ip){
     octet[1] = (ip >> 8) & 0xFF; //on décale vers la droite de 8 bits
     octet[2] = (ip >> 16) & 0xFF; //16 bits
     octet[3] = (ip >> 24) & 0xFF; // 24 bits
-    printf("%d.%d.%d.%d\n", octet[0], octet[1], octet[2], octet[3]);
 
     sprintf(s_ip, "%d.%d.%d.%d", octet[0], octet[1], octet[2], octet[3]);
 

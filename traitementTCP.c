@@ -15,8 +15,6 @@
 
 void traitementTCP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32], unsigned short sp, unsigned short dp) {
 
-    printf("tcp\n\n"); //debug
-
     //entete TCP
     struct tcphdr *tcph = (struct tcphdr *) (dtg + sizeof(struct ip));
 
@@ -65,8 +63,6 @@ void traitementTCP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32
     tcph -> window = htons(40); // taille maximum de la fenêtre
     tcph -> urg_ptr = 0;
 
-    printf("%d\n", tcph -> seq);
-
     //calcul de la checksum udp à l'aide du pseudo-entete
     ph.source = inet_addr(sip);
     ph.dest = sin.sin_addr.s_addr;
@@ -87,6 +83,6 @@ void traitementTCP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32
         perror("Échec de l'envoi du paquet.");
     }
     else {
-        printf("Paquet envoyé. Longueur : %d \n", iph -> tot_len);
+        printf("Paquet envoyé. Longueur : %d octets\n", iph -> tot_len);
     }
 }

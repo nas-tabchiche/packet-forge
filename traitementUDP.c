@@ -13,8 +13,6 @@
 
 void traitementUDP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32], unsigned short sp, unsigned short dp) {
 
-    printf("udp\n\n"); //debug
-
     //entete UDP
     struct udphdr *udph = (struct udphdr *) (dtg + sizeof(struct ip));
 
@@ -73,7 +71,7 @@ void traitementUDP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32
         perror("Échec de l'envoi du paquet.");
     }
     else {
-        printf("Paquet envoyé. Longueur : %d \n", iph -> tot_len);
+        printf("Paquet envoyé. Longueur : %d octets\n", iph -> tot_len);
     }
 
 }
