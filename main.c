@@ -20,22 +20,21 @@ const char *argp_program_version = "forger-paquets 0.1.0";
 
 
 struct arguments {
-    char *args[4];
-    int verbose; // -v
+    char *args[3];
+    int verbose, s_port, flood; // -v -p -f
     char *outfile; // -o
-    char *string1, *string2, *s_ip, *s_port; // arguments pour -a -b -i -p
+    char *string1, *string2, *s_ip; // arguments pour -a -b -i
     char *d_ip, *protocole; // adresse IP destination, spécifiée par l'utilisateur
-    int d_port; // port destination, spécifié par l'utilisateur
+    unsigned short d_port; // port destination, spécifié par l'utilisateur
 };
 
 static struct argp_option options[] =
 {
     {"verbose", 'v', 0, 0, "Produire sortie verbeuse"},
-    {"alpha",   'a', "STRING1", 0, "Faire quelque chose avec STRING1 en rapport avec la lettre A"},
-    {"bravo",   'b', "STRING2", 0, "Faire quelque chose avec STRING2 en rapport avec la lettre B"},
-    {"randsourceip",   'i', "SOURCE_IP", 0, "Spécifier l'adresse IP Source (Aléatoire si non spécifiée)"},
-    {"randsourceport",   'p', "SOURCE_PORT", 0, "Spécifier le Port Source (Aléatoire si non spécifié)"},
+    {"sourceip",   'i', "SOURCE_IP", 0, "Spécifier l'adresse IP Source (Aléatoire si non spécifiée)"},
+    {"sourceport",   'p', "SOURCE_PORT", 0, "Spécifier le Port Source (Aléatoire si non spécifié)"},
     {"output",  'o', "OUTFILE", 0, "Prendre OUTFILE comme sortie au lieu de la sortie standard"},
+    {"flood",  'f', 0, 0, "Envoi des paquets le plus vite possible jusqu'à interruption du programme"},
     {0}
 };
 
@@ -55,13 +54,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
       arguments->s_ip = arg;
       break;
     case 'p':
-      arguments->s_port = arg;
+      arguments->s_port = atoi(arg);
       break;
-    case 'a':
-      arguments->string1 = arg;
-      break;
-    case 'b':
-      arguments->string2 = arg;
+    case 'f':
+      arguments->flood = 1;
       break;
     case 'o':
       arguments->outfile = arg;
@@ -74,7 +70,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       arguments->args[state->arg_num] = arg;
       break;
     case ARGP_KEY_END:
-      if (state->arg_num < 2)
+      if (state->arg_num < 3)
 	{
 	  argp_usage (state);
 	}
@@ -109,20 +105,23 @@ int main (int argc, char **argv) {
     strcpy(ipdest, argv[3]);
     dest_port = atoi(argv[4]);*/
 
+    srand(time(NULL));
+
     struct arguments arguments;
     FILE *outstream;
 
     // ARGUMENTS PAR DÉFAUT
 
     arguments.outfile = NULL;
-    arguments.string1 = "";
-    arguments.string2 = "";
+    //arguments.string1 = "";
+    //arguments.string2 = "";
     arguments.verbose = 0;
-    arguments.s_ip = "";
-    arguments.s_port = "";
-    arguments.protocole = "";
-    arguments.d_ip = "";
-    arguments.d_port = 0;
+    arguments.s_ip = NULL;
+    arguments.s_port = 0;
+    arguments.flood = 0;
+    //arguments.protocole = "";
+    //arguments.d_ip = "";
+    //arguments.d_port = atoi(arguments.args[2]);
 
     // PARSING ARGUMENTS
 
@@ -135,29 +134,9 @@ int main (int argc, char **argv) {
     else
         outstream = stdout;
 
-    // PRINT VALEURS ARGUMENTS
-
-    fprintf (outstream, "IP_SOURCE = %s\nPORT_SOURCE = %s\n\n",
-	   arguments.s_ip, arguments.s_port);
-    fprintf (outstream, "PROTOCOLE = %s\nIP_DESTINATION = %s\nPORT_DESTINATION = %s\n\n",
-	   arguments.args[0],
-	   arguments.args[1],
-	   arguments.args[2]);
-
-
-
-    srand(time(NULL));
-
-    //création du socket raw
+    // création du socket raw
 
     int s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-
-    if(s < 0) {
-        perror("erreur socket(), essayez sudo.");
-        exit(1);
-    }
-
-    printf("socket OK.\n\n"); //pour débuggage, à déplacer dans verbose output
 
     unsigned short source_port;
 
@@ -170,37 +149,80 @@ int main (int argc, char **argv) {
     //entete IP
     //struct iphdr *iph = (struct iphdr *)datagram;
 
-    //while(1) {
+    if (arguments.flood) {
+        while(1) {
 
-    //notre ip spoofée
+            strcpy(source_ip, stringIP(rand()));
 
-    uint32_t ips = rand(); //on génère un bête entier 32 bits
-    strcpy(source_ip, stringIP(ips));
+            if (arguments.s_ip)
+                strcpy(source_ip, arguments.s_ip);
 
-    /*if (arguments.s_ip)                                                   // MARCHE PAS
-        strcpy(source_ip, arguments.s_ip);*/
-
-
-    source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
-
-    // VERBOSE OUTPUT
-
-    if (arguments.verbose)
-        fprintf (outstream, "protocole \t: %s\nipsource \t: %s\nport source \t: %d\nipdest \t\t: %s\nport dest \t: %d\n\n", arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2]));
-
-    //printf("protocole \t: %s\nipsource \t: %s\nport source \t: %d\nipdest \t\t: %s\nport dest \t: %d\n\n", arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2])); //debuggage
+            if (arguments.s_port)
+                source_port = arguments.s_port;
 
 
-    if(strcmp(arguments.args[0], "udp") == 0) {
-        traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, arguments.args[2]);
+            source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+
+            if(strcmp(arguments.args[0], "udp") == 0) {
+                traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
+            }
+
+            else if(strcmp(arguments.args[0], "tcp") == 0) {
+                traitementTCP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
+            }
+
+            // VERBOSE OUTPUT
+
+            if (arguments.verbose) {
+                if(s < 0) {
+                    perror("erreur socket(), essayez sudo.");
+                    exit(1);
+                }
+                fprintf (outstream, "PROTOCOLE \t\t: %s\n"
+                                    "ADRESSE IP SOURCE \t: %s\n"
+                                    "PORT SOURCE \t\t: %d\n"
+                                    "ADRESSE IP DESTINATION \t: %s\n"
+                                    "PORT DESTINATION \t: %d\n\n",
+                                    arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2]));
+            }
+
+        }
     }
 
-    else if(strcmp(arguments.args[0], "tcp") == 0) {
-        traitementTCP(s, datagram, data, source_ip, arguments.args[1], source_port, arguments.args[2]);
+    else {
+        strcpy(source_ip, stringIP(rand()));
+
+        if (arguments.s_ip)
+            strcpy(source_ip, arguments.s_ip);
+
+        if (arguments.s_port)
+            source_port = arguments.s_port;
+
+        source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+
+        if(strcmp(arguments.args[0], "udp") == 0) {
+            traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
+        }
+
+        else if(strcmp(arguments.args[0], "tcp") == 0) {
+            traitementTCP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
+        }
+        // VERBOSE OUTPUT
+
+        if (arguments.verbose) {
+            if(s < 0) {
+                perror("erreur socket(), essayez sudo.");
+                exit(1);
+            }
+            fprintf (outstream, "PROTOCOLE \t\t: %s\n"
+                                "ADRESSE IP SOURCE \t: %s\n"
+                                "PORT SOURCE \t\t: %d\n"
+                                "ADRESSE IP DESTINATION \t: %s\n"
+                                "PORT DESTINATION \t: %d\n\n",
+                                arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2]));
+        }
+
     }
-
-    //}
-
 
     return 0;
 }
