@@ -21,9 +21,9 @@ const char *argp_program_version = "forger-paquets 0.1.0";
 
 struct arguments {
     char *args[3];
-    int verbose, flood; // -v -p -f
+    int verbose, flood; // -v -f
     char *outfile; // -o
-    char *string1, *string2, *s_port, *s_ip; // arguments pour -a -b -i
+    char *string1, *string2, *s_port, *s_ip, *count; // arguments pour -a -b -i -p -c
     char *d_ip, *protocole; // adresse IP destination, spécifiée par l'utilisateur
     unsigned short d_port; // port destination, spécifié par l'utilisateur
 };
@@ -35,6 +35,7 @@ static struct argp_option options[] =
     {"sourceport",   'p', "S_PORT", 0, "Spécifier le Port Source (Aléatoire si non spécifié)"},
     {"output",  'o', "OUTFILE", 0, "Prendre OUTFILE comme sortie au lieu de la sortie standard"},
     {"flood",  'f', 0, 0, "Envoi des paquets le plus vite possible jusqu'à interruption du programme"},
+    {"count",  'c', "COUNT", 0, "Spécifier le nombre de paquets à envoyer"},
     {0}
 };
 
@@ -58,6 +59,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
     case 'f':
       arguments->flood = 1;
+      break;
+    case 'c':
+      arguments->count = arg;
       break;
     case 'o':
       arguments->outfile = arg;
@@ -173,6 +177,45 @@ int main (int argc, char **argv) {
                                     "PORT DESTINATION \t: %d\n\n",
                                     arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2]));
             }
+        }
+    }
+
+    else if (arguments.count) {
+        int i = 0;
+        for(i = 0; i<atoi(arguments.count); i++) {                     // vv mettre dans une fonction pour alléger vv
+
+            strcpy(source_ip, stringIP(rand()));
+
+            if (arguments.s_ip)
+                strcpy(source_ip, arguments.s_ip);
+
+            source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+
+            if (arguments.s_port)
+            source_port = atoi(arguments.s_port);
+
+            if(strcmp(arguments.args[0], "udp") == 0) {
+                traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
+            }
+
+            else if(strcmp(arguments.args[0], "tcp") == 0) {
+                traitementTCP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
+            }
+
+            // VERBOSE OUTPUT
+
+            if (arguments.verbose) {
+                if(s < 0) {
+                    perror("erreur socket(), essayez sudo.");
+                    exit(1);
+                }
+                fprintf (outstream, "PROTOCOLE \t\t: %s\n"
+                                    "ADRESSE IP SOURCE \t: %s\n"
+                                    "PORT SOURCE \t\t: %d\n"
+                                    "ADRESSE IP DESTINATION \t: %s\n"
+                                    "PORT DESTINATION \t: %d\n\n",
+                                    arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2]));
+            }
 
         }
     }
@@ -215,3 +258,4 @@ int main (int argc, char **argv) {
 
     return 0;
 }
+
