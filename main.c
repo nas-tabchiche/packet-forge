@@ -23,7 +23,7 @@ struct arguments {
     char *args[3];
     int verbose, flood; // -v -f
     char *outfile; // -o
-    char *string1, *string2, *s_port, *s_ip, *count; // arguments pour -a -b -i -p -c
+    char *string1, *string2, *s_port, *s_ip, *count, *payload; // arguments pour -a -b -i -p -c
     char *d_ip, *protocole; // adresse IP destination, spécifiée par l'utilisateur
     unsigned short d_port; // port destination, spécifié par l'utilisateur
 };
@@ -36,6 +36,7 @@ static struct argp_option options[] =
     {"output",  'o', "OUTFILE", 0, "Prendre OUTFILE comme sortie au lieu de la sortie standard"},
     {"flood",  'f', 0, 0, "Envoi des paquets le plus vite possible jusqu'à interruption du programme"},
     {"count",  'c', "COUNT", 0, "Spécifier le nombre de paquets à envoyer"},
+    {"payload",  'd', "PAYLOAD", 0, "Spécifier le champ DATA"},
     {0}
 };
 
@@ -56,6 +57,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
     case 'p':
       arguments->s_port = arg;
+      break;
+    case 'd':
+      arguments->payload = arg;
       break;
     case 'f':
       arguments->flood = 1;
@@ -106,16 +110,12 @@ int main (int argc, char **argv) {
     // ARGUMENTS PAR DÉFAUT
 
     arguments.outfile = NULL;
-    //arguments.string1 = "";
-    //arguments.string2 = "";
     arguments.verbose = 0;
     arguments.s_ip = NULL;
-    arguments.s_port = 0;
+    arguments.s_port = NULL;
     arguments.flood = 0;
     arguments.count = NULL;
-    //arguments.protocole = "";
-    //arguments.d_ip = "";
-    //arguments.d_port = atoi(arguments.args[2]);
+    arguments.payload = NULL;
 
     // PARSING ARGUMENTS
 
@@ -155,6 +155,9 @@ int main (int argc, char **argv) {
 
             if (arguments.s_port)
             source_port = atoi(arguments.s_port);
+
+            if (arguments.payload)
+            strcpy(data, arguments.payload);
 
             if(strcmp(arguments.args[0], "udp") == 0) {
                 traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
@@ -196,6 +199,9 @@ int main (int argc, char **argv) {
             if (arguments.s_port)
             source_port = atoi(arguments.s_port);
 
+            if (arguments.payload)
+                strcpy(data, arguments.payload);
+
             if(strcmp(arguments.args[0], "udp") == 0) {
                 traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
             }
@@ -218,8 +224,8 @@ int main (int argc, char **argv) {
                                     "PORT DESTINATION \t: %d\n\n",
                                     arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2]));
             }
-
         }
+
         return 0;
     }
 
@@ -234,6 +240,9 @@ int main (int argc, char **argv) {
 
         if (arguments.s_port)
             source_port = atoi(arguments.s_port);
+
+        if (arguments.payload)
+            strcpy(data, arguments.payload);
 
         if(strcmp(arguments.args[0], "udp") == 0) {
             traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));

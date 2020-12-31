@@ -22,8 +22,8 @@ void traitementTCP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32
     struct pseudo_entete ph;
 
     //Data part
-    dt = dtg + sizeof(struct iphdr) + sizeof(struct tcphdr);
-    strcpy(dt, "69 LA TRIK"); //remplissage champ données
+    char *dta = dtg + sizeof(struct iphdr) + sizeof(struct tcphdr);
+    strcpy(dta, dt); //remplissage champ données
 
     sin.sin_family = AF_INET;
     sin.sin_port = htons(80);
@@ -35,7 +35,7 @@ void traitementTCP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32
     iph -> ihl = 5;
     iph -> version = 4; //ipv4
     iph -> tos = 0;
-    iph -> tot_len = sizeof(struct iphdr) + sizeof(struct tcphdr) + strlen(dt);
+    iph -> tot_len = sizeof(struct iphdr) + sizeof(struct tcphdr) + strlen(dta);
     iph -> id = htonl (1);
     iph -> frag_off = 0;
     iph -> ttl = 255;
@@ -68,13 +68,13 @@ void traitementTCP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32
     ph.dest = sin.sin_addr.s_addr;
     ph.mbz = 0; //MBZ toujours à 0
     ph.type = IPPROTO_TCP;
-    ph.longueur = htons(sizeof(struct tcphdr) + strlen(dt));
+    ph.longueur = htons(sizeof(struct tcphdr) + strlen(dta));
 
-    int taille_pseudogramme = sizeof(struct pseudo_entete) + sizeof(struct tcphdr) + strlen(dt);
+    int taille_pseudogramme = sizeof(struct pseudo_entete) + sizeof(struct tcphdr) + strlen(dta);
     char *pseudogram = malloc(taille_pseudogramme);
 
     memcpy(pseudogram , (char*)&ph, sizeof(struct pseudo_entete));
-    memcpy(pseudogram + sizeof(struct pseudo_entete), tcph, sizeof(struct tcphdr) + strlen(dt));
+    memcpy(pseudogram + sizeof(struct pseudo_entete), tcph, sizeof(struct tcphdr) + strlen(dta));
 
     tcph -> check = checksum((unsigned short*)pseudogram , taille_pseudogramme);
 
