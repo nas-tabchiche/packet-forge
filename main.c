@@ -112,6 +112,7 @@ int main (int argc, char **argv) {
     arguments.s_ip = NULL;
     arguments.s_port = 0;
     arguments.flood = 0;
+    arguments.count = NULL;
     //arguments.protocole = "";
     //arguments.d_ip = "";
     //arguments.d_port = atoi(arguments.args[2]);
@@ -178,6 +179,7 @@ int main (int argc, char **argv) {
                                     arguments.args[0], source_ip, source_port, arguments.args[1], atoi(arguments.args[2]));
             }
         }
+        return 0;
     }
 
     else if (arguments.count) {
@@ -218,7 +220,9 @@ int main (int argc, char **argv) {
             }
 
         }
+        return 0;
     }
+
 
     else {
         strcpy(source_ip, stringIP(rand()));
