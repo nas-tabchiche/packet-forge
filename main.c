@@ -21,9 +21,9 @@ const char *argp_program_version = "forger-paquets 0.1.0";
 
 struct arguments {
     char *args[3];
-    int verbose, s_port, flood; // -v -p -f
+    int verbose, flood; // -v -p -f
     char *outfile; // -o
-    char *string1, *string2, *s_ip; // arguments pour -a -b -i
+    char *string1, *string2, *s_port, *s_ip; // arguments pour -a -b -i
     char *d_ip, *protocole; // adresse IP destination, spécifiée par l'utilisateur
     unsigned short d_port; // port destination, spécifié par l'utilisateur
 };
@@ -31,8 +31,8 @@ struct arguments {
 static struct argp_option options[] =
 {
     {"verbose", 'v', 0, 0, "Produire sortie verbeuse"},
-    {"sourceip",   'i', "SOURCE_IP", 0, "Spécifier l'adresse IP Source (Aléatoire si non spécifiée)"},
-    {"sourceport",   'p', "SOURCE_PORT", 0, "Spécifier le Port Source (Aléatoire si non spécifié)"},
+    {"sourceip",   'i', "S_IP", 0, "Spécifier l'adresse IP Source (Aléatoire si non spécifiée)"},
+    {"sourceport",   'p', "S_PORT", 0, "Spécifier le Port Source (Aléatoire si non spécifié)"},
     {"output",  'o', "OUTFILE", 0, "Prendre OUTFILE comme sortie au lieu de la sortie standard"},
     {"flood",  'f', 0, 0, "Envoi des paquets le plus vite possible jusqu'à interruption du programme"},
     {0}
@@ -54,7 +54,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       arguments->s_ip = arg;
       break;
     case 'p':
-      arguments->s_port = atoi(arg);
+      arguments->s_port = arg;
       break;
     case 'f':
       arguments->flood = 1;
@@ -94,17 +94,6 @@ static char doc[] = "forger-paquets -- Un programme pour forger des paquets IP e
 static struct argp argp = {options, parse_opt, args_doc, doc};
 
 int main (int argc, char **argv) {
-
-    //récupération des arguments
-    /*
-    char protocole[4], ipsource[32], ipdest[32];
-
-
-    strcpy(protocole, argv[1]);
-    strcpy(ipsource, argv[2]);
-    strcpy(ipdest, argv[3]);
-    dest_port = atoi(argv[4]);*/
-
     srand(time(NULL));
 
     struct arguments arguments;
@@ -150,18 +139,17 @@ int main (int argc, char **argv) {
     //struct iphdr *iph = (struct iphdr *)datagram;
 
     if (arguments.flood) {
-        while(1) {
+        while(1) {                                                      // vv mettre dans une fonction pour alléger vv
 
             strcpy(source_ip, stringIP(rand()));
 
             if (arguments.s_ip)
                 strcpy(source_ip, arguments.s_ip);
 
-            if (arguments.s_port)
-                source_port = arguments.s_port;
-
-
             source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+
+            if (arguments.s_port)
+            source_port = atoi(arguments.s_port);
 
             if(strcmp(arguments.args[0], "udp") == 0) {
                 traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
@@ -195,10 +183,10 @@ int main (int argc, char **argv) {
         if (arguments.s_ip)
             strcpy(source_ip, arguments.s_ip);
 
-        if (arguments.s_port)
-            source_port = arguments.s_port;
-
         source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+
+        if (arguments.s_port)
+            source_port = atoi(arguments.s_port);
 
         if(strcmp(arguments.args[0], "udp") == 0) {
             traitementUDP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
@@ -207,6 +195,7 @@ int main (int argc, char **argv) {
         else if(strcmp(arguments.args[0], "tcp") == 0) {
             traitementTCP(s, datagram, data, source_ip, arguments.args[1], source_port, atoi(arguments.args[2]));
         }
+
         // VERBOSE OUTPUT
 
         if (arguments.verbose) {
