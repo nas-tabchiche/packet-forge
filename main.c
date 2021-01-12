@@ -23,7 +23,7 @@ struct arguments {
     char *args[3];
     int verbose, flood; // -v -f
     char *outfile; // -o
-    char *string1, *string2, *s_port, *s_ip, *count, *payload; // arguments pour -a -b -i -p -c
+    char *string1, *string2, *s_port, *s_ip, *count, *payload; // arguments pour -a -b -i -p -c -d
     char *d_ip, *protocole; // adresse IP destination, spécifiée par l'utilisateur
     unsigned short d_port; // port destination, spécifié par l'utilisateur
 };

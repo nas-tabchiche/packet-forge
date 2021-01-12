@@ -72,6 +72,7 @@ void traitementUDP(int sock, char dtg[1024], char *dt, char sip[32], char dip[32
     }
     else {
         printf("Paquet envoyé. Longueur : %d octets\n", iph -> tot_len);
+        //fflush(stdout);
     }
 
 }
