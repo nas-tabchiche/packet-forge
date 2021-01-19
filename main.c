@@ -146,15 +146,15 @@ int main (int argc, char **argv) {
     if (arguments.flood) {
         while(1) {                                                      // vv mettre dans une fonction pour alléger vv
 
-            strcpy(source_ip, stringIP(rand()));
-
             if (arguments.s_ip)
                 strcpy(source_ip, arguments.s_ip);
-
-            source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+            else
+                strcpy(source_ip, stringIP(rand()));
 
             if (arguments.s_port)
-            source_port = atoi(arguments.s_port);
+                source_port = atoi(arguments.s_port);
+            else
+                source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
 
             if (arguments.payload)
             strcpy(data, arguments.payload);
@@ -187,17 +187,18 @@ int main (int argc, char **argv) {
 
     else if (arguments.count) {
         int i = 0;
-        for(i = 0; i<atoi(arguments.count); i++) {                     // vv mettre dans une fonction pour alléger vv
 
-            strcpy(source_ip, stringIP(rand()));
+        for(i = 0; i<atoi(arguments.count); i++) {                     // vv mettre dans une fonction pour alléger vv
 
             if (arguments.s_ip)
                 strcpy(source_ip, arguments.s_ip);
-
-            source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+            else
+                strcpy(source_ip, stringIP(rand()));
 
             if (arguments.s_port)
-            source_port = atoi(arguments.s_port);
+                source_port = atoi(arguments.s_port);
+            else
+                source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
 
             if (arguments.payload)
                 strcpy(data, arguments.payload);
@@ -231,15 +232,16 @@ int main (int argc, char **argv) {
 
 
     else {
-        strcpy(source_ip, stringIP(rand()));
 
         if (arguments.s_ip)
             strcpy(source_ip, arguments.s_ip);
-
-        source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
+        else
+            strcpy(source_ip, stringIP(rand()));
 
         if (arguments.s_port)
             source_port = atoi(arguments.s_port);
+        else
+            source_port = randGen(1024, 65535); //générer port destination aléatoire entre 1024 et 65535
 
         if (arguments.payload)
             strcpy(data, arguments.payload);
